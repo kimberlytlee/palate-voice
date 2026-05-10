@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(echo '{\"name\":\"palate\",\"private\":true,\"version\":\"0.0.0\",\"type\":\"module\",\"scripts\":{\"dev\":\"vite\",\"build\":\"vite build\",\"preview\":\"vite preview\"},\"dependencies\":{\"react\":\"^18.3.1\",\"react-dom\":\"^18.3.1\"},\"devDependencies\":{\"@types/react\":\"^18.3.1\",\"@types/react-dom\":\"^18.3.1\",\"@vitejs/plugin-react\":\"^4.3.1\",\"vite\":\"^5.4.1\",\"vite-plugin-pwa\":\"^0.20.5\"}}' > package.json)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p /Users/kimberlylee/tester/food-voice/src/hooks /Users/kimberlylee/tester/food-voice/src/components /Users/kimberlylee/tester/food-voice/public && ls /Users/kimberlylee/tester/food-voice)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(p.get\\('main',''\\), p.get\\('module',''\\), list\\(p.get\\('exports',{}\\).keys\\(\\)\\)[:10]\\)\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(npx vite *)",
+      "Bash(git -C /Users/kimberlylee/tester/food-voice ls-files --error-unmatch node_modules)"
+    ],
+    "additionalDirectories": [
+      "/Users/kimberlylee/tester/food-voice",
+      "/Users/kimberlylee/tester/food-voice/src"
+    ]
+  }
+}
