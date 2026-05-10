@@ -2,3 +2,9 @@ node_modules/
 dist/
 .env
 .env.local
+
+# Large binary assets (copy from node_modules at setup)
+public/ort-wasm-simd-threaded.wasm
+public/ort-wasm-simd-threaded.mjs
+public/silero_vad_legacy.onnx
+public/vad.worklet.bundle.min.js
