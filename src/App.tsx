@@ -78,7 +78,7 @@ export default function App() {
     }
   }, [transcribe, sendMessage, speak])
 
-  const { userIsSpeaking, start: startVAD, pause: pauseVAD, resume: resumeVAD } = useVAD({
+  const { userIsSpeaking, errored: vadError, start: startVAD, pause: pauseVAD, resume: resumeVAD } = useVAD({
     onSpeechEnd: handleSpeechEnd,
   })
 
@@ -92,6 +92,11 @@ export default function App() {
     syncPhase('initializing')
 
     try {
+      // Prime mic permission before VAD requests it — makes the dialog appear
+      // immediately and prevents getUserMedia from hanging silently.
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStream.getTracks().forEach(t => t.stop())
+
       const [city] = await Promise.all([detectCity(), startVAD()])
       pauseVAD()
 
@@ -210,6 +215,12 @@ export default function App() {
               ))}
             </div>
           </section>
+        )}
+
+        {vadError && (
+          <div className="app-error-banner">
+            <span>Mic error: {vadError}</span>
+          </div>
         )}
 
         {error && (

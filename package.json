@@ -6,20 +6,32 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "tsx server/index.ts",
+    "start": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
+    "@ricky0123/vad-react": "^0.0.36",
     "@ricky0123/vad-web": "^0.0.30",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
     "openai": "^6.37.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vite": "^5.4.1",
     "vite-plugin-pwa": "^0.20.5"

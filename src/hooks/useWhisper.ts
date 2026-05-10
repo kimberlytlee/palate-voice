@@ -12,9 +12,8 @@ export function useWhisper() {
     formData.append('model', 'whisper-1')
     formData.append('language', 'en')
 
-    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const res = await fetch('/api/transcribe', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${import.meta.env.VITE_OPENAI_KEY}` },
       body: formData,
     })
 

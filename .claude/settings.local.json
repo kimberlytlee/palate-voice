@@ -8,7 +8,11 @@
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(p.get\\('main',''\\), p.get\\('module',''\\), list\\(p.get\\('exports',{}\\).keys\\(\\)\\)[:10]\\)\")",
       "Bash(python3 -m json.tool)",
       "Bash(npx vite *)",
-      "Bash(git -C /Users/kimberlylee/tester/food-voice ls-files --error-unmatch node_modules)"
+      "Bash(git -C /Users/kimberlylee/tester/food-voice ls-files --error-unmatch node_modules)",
+      "Bash(npm --version)",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)",
+      "WebFetch(domain:docs.vad.ricky0123.com)"
     ],
     "additionalDirectories": [
       "/Users/kimberlylee/tester/food-voice",

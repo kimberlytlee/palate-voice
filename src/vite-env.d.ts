@@ -1,10 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_OPENAI_KEY: string
-  readonly VITE_ANTHROPIC_KEY: string
-  readonly VITE_ELEVENLABS_KEY: string
-  readonly VITE_ELEVENLABS_VOICE_ID: string | undefined
+  // API keys are server-side only — see server/index.ts
 }
 
 interface ImportMeta {

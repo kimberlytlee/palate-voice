@@ -90,16 +90,9 @@ export function useClaude() {
         { role: 'user', content: userText },
       ];
 
-      // right now it's sending the API key with every req
-      // in a production app, you'd want to proxy this through your backend to keep the key secure and avoid CORS issues
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-request-on-behalf-of-a-user': 'true',
-        },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 1024,
