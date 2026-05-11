@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl'
-import fs from 'node:fs'
-import path from 'node:path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // Vite tries to transform .mjs files as ES modules before the /public static
 // server can serve them. This plugin intercepts those requests first and
@@ -11,23 +11,35 @@ import path from 'node:path'
 const serveOrtWasmAsStatic = {
   name: 'serve-ort-wasm-as-static',
   configureServer(server: import('vite').ViteDevServer) {
+    // Middleware to set COOP/COEP headers on ALL responses
     server.middlewares.use((req, res, next) => {
-      const url = req.url?.split('?')[0] ?? ''
-      if (url === '/ort-wasm-simd-threaded.mjs') {
-        res.setHeader('Content-Type', 'application/javascript')
-        fs.createReadStream(path.resolve('public/ort-wasm-simd-threaded.mjs')).pipe(res)
-        return
+      res.setHeader('cross-origin-opener-policy', 'same-origin');
+      res.setHeader('cross-origin-embedder-policy', 'require-corp');
+      next();
+    });
+
+    // Handle .mjs file serving
+    server.middlewares.use((req, res, next) => {
+      const url = req.url?.split('?')[0] ?? '';
+      if (
+        url === '/ort-wasm-simd-threaded.mjs' ||
+        url === '/ort-wasm-simd-threaded.jsep.mjs'
+      ) {
+        const filename = url.slice(1);
+        res.setHeader('Content-Type', 'application/javascript');
+        fs.createReadStream(path.resolve(`public/${filename}`)).pipe(res);
+        return;
       }
-      next()
-    })
+      next();
+    });
   },
-}
+};
 
 export default defineConfig({
   plugins: [
+    serveOrtWasmAsStatic,
     basicSsl(),
     react(),
-    serveOrtWasmAsStatic,
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -65,4 +77,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@ricky0123/vad-web', '@ricky0123/vad-react'],
   },
-})
+});
