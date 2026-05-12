@@ -7,12 +7,13 @@ interface Props {
   phase: Phase
   userIsSpeaking: boolean
   isMuted: boolean
+  vadLoading: boolean
   onStart: () => void
   onMute: () => void
   onUnmute: () => void
 }
 
-export default function MicButton({ phase, userIsSpeaking, onStart, onMute, onUnmute, isMuted }: Props) {
+export default function MicButton({ phase, userIsSpeaking, onStart, onMute, onUnmute, isMuted, vadLoading }: Props) {
   const isIdle = phase === 'idle'
   const showWave = userIsSpeaking && !isMuted
   const showPulse = phase === 'thinking' || phase === 'transcribing'
@@ -26,11 +27,11 @@ export default function MicButton({ phase, userIsSpeaking, onStart, onMute, onUn
   return (
     <div className="mb-wrapper">
       {isIdle ? (
-        <button className="mb-start-btn" onClick={onStart} aria-label="Start Palate">
+        <button className="mb-start-btn" onClick={onStart} disabled={vadLoading} aria-label="Start Palate">
           <span className="mb-start-inner">
             <MicIcon size={28} color="#0f0f0f" />
           </span>
-          <span className="mb-start-label">Start</span>
+          <span className="mb-start-label">{vadLoading ? 'Loading…' : 'Start'}</span>
         </button>
       ) : (
         <div className="mb-active-wrapper">
