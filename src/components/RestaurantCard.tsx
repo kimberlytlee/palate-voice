@@ -9,11 +9,16 @@ interface Props {
 }
 
 export default function RestaurantCard({ restaurant, selected, onSelect, index }: Props) {
-  const { name, cuisine, rating, priceRange, address, why, tags = [] } = restaurant
+  const { name, cuisine, rating, priceRange, address, why, tags = [], placeId } = restaurant
 
   const mapsQuery = encodeURIComponent(`${name} ${address ?? ''}`)
-  const mapsUrl = `https://maps.google.com/?q=${mapsQuery}`
-  const appleMapsUrl = `https://maps.apple.com/?q=${mapsQuery}`
+  const mapsUrl = placeId
+    ? `https://www.google.com/maps/place/?q=place_id:${placeId}`
+    : `https://maps.google.com/?q=${mapsQuery}`
+  // Apple Maps doesn't support Google place_id — use verified address when available
+  const appleMapsUrl = placeId
+    ? `https://maps.apple.com/?q=${encodeURIComponent(address ?? name)}`
+    : `https://maps.apple.com/?q=${mapsQuery}`
 
   return (
     <article

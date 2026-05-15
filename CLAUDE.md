@@ -22,6 +22,7 @@ OPENAI_KEY=...
 ANTHROPIC_KEY=...
 ELEVENLABS_KEY=...
 ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM   # optional, defaults to Rachel
+GOOGLE_PLACES_KEY=...                      # optional, enables verified restaurant links
 ```
 
 ## Architecture
@@ -31,6 +32,7 @@ Browser (Vite :3000)          Express proxy (server/index.ts :3001)
   useVAD       → mic audio    
   useWhisper   → POST /api/transcribe  → OpenAI Whisper
   useClaude    → POST /api/chat        → Anthropic Claude
+  usePlaces    → GET  /api/places      → Google Places (optional)
   useElevenLabs→ POST /api/speak       → ElevenLabs TTS
   useGeolocation → Nominatim (no key, stays in browser)
 ```
@@ -88,6 +90,7 @@ The options use milliseconds, not frames:
 | `src/hooks/useClaude.ts` | Conversation history + restaurant parsing |
 | `src/hooks/useWhisper.ts` | Audio → transcript via proxy |
 | `src/hooks/useElevenLabs.ts` | Text → speech via proxy |
+| `src/hooks/usePlaces.ts` | Enriches Claude's restaurant recs with verified Google Places data |
 | `src/hooks/useGeolocation.ts` | GPS → city name via Nominatim |
 | `server/index.ts` | Express proxy; validates env vars at startup |
 | `vite.config.ts` | HTTPS, COOP/COEP headers, proxy, WASM middleware |
