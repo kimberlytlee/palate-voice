@@ -1,41 +1,59 @@
-import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
-import multer from 'multer'
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
 
-const OPENAI_KEY = process.env.OPENAI_KEY
-  ?? (() => { throw new Error('Missing OPENAI_KEY in .env') })()
-const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY
-  ?? (() => { throw new Error('Missing ANTHROPIC_KEY in .env') })()
-const ELEVENLABS_KEY = process.env.ELEVENLABS_KEY
-  ?? (() => { throw new Error('Missing ELEVENLABS_KEY in .env') })()
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? '21m00Tcm4TlvDq8ikWAM'
+const OPENAI_KEY =
+  process.env.OPENAI_KEY ??
+  (() => {
+    throw new Error('Missing OPENAI_KEY in .env');
+  })();
+const ANTHROPIC_KEY =
+  process.env.ANTHROPIC_KEY ??
+  (() => {
+    throw new Error('Missing ANTHROPIC_KEY in .env');
+  })();
+const ELEVENLABS_KEY =
+  process.env.ELEVENLABS_KEY ??
+  (() => {
+    throw new Error('Missing ELEVENLABS_KEY in .env');
+  })();
+const VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? '21m00Tcm4TlvDq8ikWAM';
+const GOOGLE_PLACES_KEY = process.env.GOOGLE_PLACES_KEY;
 
-const app = express()
-const upload = multer({ storage: multer.memoryStorage() })
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
 
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
 // Whisper — multipart/form-data audio file → transcription JSON
 app.post('/api/transcribe', upload.single('file'), async (req, res, next) => {
   try {
-    const file = req.file!
-    const form = new FormData()
-    form.append('file', new File([file.buffer], file.originalname, { type: file.mimetype }))
-    form.append('model', (req.body.model as string | undefined) ?? 'whisper-1')
-    form.append('language', (req.body.language as string | undefined) ?? 'en')
+    const file = req.file!;
+    const form = new FormData();
+    form.append(
+      'file',
+      new File([new Uint8Array(file.buffer)], file.originalname, {
+        type: file.mimetype,
+      }),
+    );
+    form.append('model', (req.body.model as string | undefined) ?? 'whisper-1');
+    form.append('language', (req.body.language as string | undefined) ?? 'en');
 
-    const upstream = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${OPENAI_KEY}` },
-      body: form,
-    })
-    res.status(upstream.status).json(await upstream.json())
+    const upstream = await fetch(
+      'https://api.openai.com/v1/audio/transcriptions',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${OPENAI_KEY}` },
+        body: form,
+      },
+    );
+    res.status(upstream.status).json(await upstream.json());
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
 // Claude — JSON conversation → JSON response
 app.post('/api/chat', async (req, res, next) => {
@@ -48,12 +66,12 @@ app.post('/api/chat', async (req, res, next) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify(req.body),
-    })
-    res.status(upstream.status).json(await upstream.json())
+    });
+    res.status(upstream.status).json(await upstream.json());
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
 // ElevenLabs — JSON text/settings → audio/mpeg buffer
 app.post('/api/speak', async (req, res, next) => {
@@ -68,22 +86,58 @@ app.post('/api/speak', async (req, res, next) => {
           Accept: 'audio/mpeg',
         },
         body: JSON.stringify(req.body),
-      }
-    )
+      },
+    );
     if (!upstream.ok) {
-      res.status(upstream.status).end()
-      return
+      res.status(upstream.status).end();
+      return;
     }
-    const buf = Buffer.from(await upstream.arrayBuffer())
-    res.status(200).set('Content-Type', 'audio/mpeg').send(buf)
+    const buf = Buffer.from(await upstream.arrayBuffer());
+    res.status(200).set('Content-Type', 'audio/mpeg').send(buf);
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err)
-  res.status(500).json({ error: err.message })
-})
+// Google Places Find Place — verifies restaurant names and returns real place_id + address
+app.get('/api/places', async (req, res, next) => {
+  try {
+    if (!GOOGLE_PLACES_KEY) {
+      res.json({ candidates: [], status: 'KEY_NOT_CONFIGURED' });
+      return;
+    }
+    const query = req.query.query as string | undefined;
+    if (!query) {
+      res.status(400).json({ error: 'query param required' });
+      return;
+    }
+    const url = new URL(
+      'https://maps.googleapis.com/maps/api/place/findplacefromtext/json',
+    );
+    url.searchParams.set('input', query);
+    url.searchParams.set('inputtype', 'textquery');
+    url.searchParams.set('fields', 'place_id,name,formatted_address');
+    url.searchParams.set('key', GOOGLE_PLACES_KEY);
 
-app.listen(3001, () => console.log('Palate proxy server running on http://localhost:3001'))
+    const upstream = await fetch(url.toString());
+    res.status(upstream.status).json(await upstream.json());
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  },
+);
+
+app.listen(3001, () =>
+  console.log('Palate proxy server running on http://localhost:3001'),
+);

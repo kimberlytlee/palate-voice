@@ -5,6 +5,7 @@ import { useVAD } from './hooks/useVAD';
 import { useWhisper } from './hooks/useWhisper';
 import { useClaude } from './hooks/useClaude';
 import type { Restaurant } from './hooks/useClaude';
+import { usePlaces } from './hooks/usePlaces';
 import { useElevenLabs } from './hooks/useElevenLabs';
 import MicButton from './components/MicButton';
 import RestaurantCard from './components/RestaurantCard';
@@ -42,6 +43,7 @@ export default function App() {
   const { detectCity } = useGeolocation();
   const { transcribe } = useWhisper();
   const { sendMessage, resetHistory } = useClaude();
+  const { enrichRestaurants } = usePlaces();
   const { speak, stop: stopTTS } = useElevenLabs();
 
   // ---------- speech-end handler (defined before VAD so ref stays current) ----------
@@ -65,7 +67,8 @@ export default function App() {
         const { spokenText, restaurants: recs } = await sendMessage(transcript);
 
         if (recs) {
-          setRestaurants(recs);
+          const enriched = await enrichRestaurants(recs);
+          setRestaurants(enriched);
           setSelectedIdx(null);
         }
 
@@ -81,7 +84,7 @@ export default function App() {
         syncPhase(currentPhase);
       }
     },
-    [transcribe, sendMessage, speak],
+    [transcribe, sendMessage, speak, enrichRestaurants],
   );
 
   const {
@@ -116,7 +119,7 @@ export default function App() {
       const [city] = await Promise.all([detectCity(), startVAD()]);
 
       const greeting = city
-        ? `Looks like you're in ${city} — is that right? What are you in the mood for?`
+        ? `Looks like you're in ${city} — is that right? Do you know what type of cuisine you're in the mood for?`
         : `Hey, I'm Palate! First — what city or neighborhood are you in?`;
 
       syncPhase('speaking');
