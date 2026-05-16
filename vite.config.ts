@@ -44,6 +44,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+        globIgnores: ['**/*.wasm', '**/*.mjs', '**/ort-wasm*'],
       },
       manifest: {
         name: 'Palate',
