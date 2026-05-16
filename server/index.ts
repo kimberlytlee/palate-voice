@@ -99,7 +99,7 @@ app.post('/api/speak', async (req, res, next) => {
   }
 });
 
-// Google Places Find Place — verifies restaurant names and returns real place_id + address
+// Google Places — two-step lookup: find place → details (editorial_summary, reviews)
 app.get('/api/places', async (req, res, next) => {
   try {
     if (!GOOGLE_PLACES_KEY) {
@@ -111,16 +111,53 @@ app.get('/api/places', async (req, res, next) => {
       res.status(400).json({ error: 'query param required' });
       return;
     }
-    const url = new URL(
+
+    const findUrl = new URL(
       'https://maps.googleapis.com/maps/api/place/findplacefromtext/json',
     );
-    url.searchParams.set('input', query);
-    url.searchParams.set('inputtype', 'textquery');
-    url.searchParams.set('fields', 'place_id,name,formatted_address');
-    url.searchParams.set('key', GOOGLE_PLACES_KEY);
+    findUrl.searchParams.set('input', query);
+    findUrl.searchParams.set('inputtype', 'textquery');
+    findUrl.searchParams.set('fields', 'place_id,name,formatted_address');
+    findUrl.searchParams.set('key', GOOGLE_PLACES_KEY);
 
-    const upstream = await fetch(url.toString());
-    res.status(upstream.status).json(await upstream.json());
+    const findRes = await fetch(findUrl.toString());
+    const findData = await findRes.json() as {
+      status: string;
+      candidates?: Array<{ place_id?: string; name?: string; formatted_address?: string }>;
+    };
+
+    if (findData.status !== 'OK' || !findData.candidates?.length) {
+      res.json(findData);
+      return;
+    }
+
+    const placeId = findData.candidates[0].place_id;
+    if (!placeId) {
+      res.json(findData);
+      return;
+    }
+
+    const detailsUrl = new URL(
+      'https://maps.googleapis.com/maps/api/place/details/json',
+    );
+    detailsUrl.searchParams.set('place_id', placeId);
+    detailsUrl.searchParams.set('fields', 'editorial_summary');
+    detailsUrl.searchParams.set('key', GOOGLE_PLACES_KEY);
+
+    const detailsRes = await fetch(detailsUrl.toString());
+    const detailsData = await detailsRes.json() as {
+      status?: string;
+      result?: {
+        editorial_summary?: { overview?: string };
+      };
+    };
+
+    const enrichedCandidate = {
+      ...findData.candidates[0],
+      editorial_summary: detailsData.result?.editorial_summary?.overview,
+    };
+
+    res.json({ ...findData, candidates: [enrichedCandidate, ...findData.candidates.slice(1)] });
   } catch (err) {
     next(err);
   }

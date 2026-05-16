@@ -4,6 +4,7 @@ import type { Restaurant } from './useClaude';
 interface PlacesCandidate {
   place_id?: string;
   formatted_address?: string;
+  editorial_summary?: string;
 }
 
 interface PlacesResponse {
@@ -29,10 +30,12 @@ export function usePlaces() {
           if (data.status !== 'OK' || !data.candidates?.length) return r;
 
           const top = data.candidates[0];
+          const description = top.editorial_summary;
           return {
             ...r,
             placeId: top.place_id ?? r.placeId,
             address: top.formatted_address ?? r.address,
+            ...(description && { description }),
           };
         }),
       );
