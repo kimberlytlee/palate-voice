@@ -12,7 +12,8 @@
       "Bash(npm --version)",
       "Bash(npm list *)",
       "Bash(npx tsc *)",
-      "WebFetch(domain:docs.vad.ricky0123.com)"
+      "WebFetch(domain:docs.vad.ricky0123.com)",
+      "WebFetch(domain:railway.com)"
     ],
     "additionalDirectories": [
       "/Users/kimberlylee/tester/food-voice",

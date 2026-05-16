@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const OPENAI_KEY =
   process.env.OPENAI_KEY ??
@@ -26,6 +29,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json());
+app.use((_req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
 
 // Whisper — multipart/form-data audio file → transcription JSON
 app.post('/api/transcribe', upload.single('file'), async (req, res, next) => {
@@ -163,6 +171,11 @@ app.get('/api/places', async (req, res, next) => {
   }
 });
 
+app.use(express.static(path.join(__dirname, '../dist')));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 app.use(
   (
     err: Error,
@@ -175,6 +188,5 @@ app.use(
   },
 );
 
-app.listen(3001, () =>
-  console.log('Palate proxy server running on http://localhost:3001'),
-);
+const PORT = process.env.PORT ?? 3001;
+app.listen(PORT, () => console.log(`Palate server running on port ${PORT}`));
