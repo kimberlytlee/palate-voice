@@ -7,6 +7,8 @@
     "node": ">=20"
   },
   "scripts": {
+    "copy-assets": "cp node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm public/ && cp node_modules/@ricky0123/vad-web/dist/silero_vad_legacy.onnx node_modules/@ricky0123/vad-web/dist/vad.worklet.bundle.min.js public/",
+    "prebuild": "npm run copy-assets",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

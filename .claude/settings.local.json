@@ -13,7 +13,10 @@
       "Bash(npm list *)",
       "Bash(npx tsc *)",
       "WebFetch(domain:docs.vad.ricky0123.com)",
-      "WebFetch(domain:railway.com)"
+      "WebFetch(domain:railway.com)",
+      "Bash(node --input-type=module)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('main'\\) or d.get\\('exports'\\) or d.get\\('module', 'no entry'\\)\\)\")",
+      "Bash(node -e \"const mt = require\\('/Users/kimberlylee/tester/food-voice/node_modules/mime-types/index.js'\\); console.log\\(mt.contentType\\('test.mjs'\\), mt.lookup\\('test.mjs'\\)\\)\")"
     ],
     "additionalDirectories": [
       "/Users/kimberlylee/tester/food-voice",
