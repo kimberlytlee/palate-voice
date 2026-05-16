@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Palate — Request Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0f0f0f;
+        color: #e8e8e8;
+        padding: 40px 24px;
+        min-height: 100vh;
+      }
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin-bottom: 8px;
+      }
+      p.sub {
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 32px;
+      }
+      .diagram-wrap {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 32px;
+        overflow-x: auto;
+      }
+      .legend {
+        margin-top: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: #aaa;
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-green {
+        background: #4ade80;
+      }
+      .dot-blue {
+        background: #60a5fa;
+      }
+      .dot-purple {
+        background: #a78bfa;
+      }
+      .dot-orange {
+        background: #fb923c;
+      }
+      .dot-gray {
+        background: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Palate — Request Flow</h1>
+    <p class="sub">Sequence of calls from user tap to restaurant cards</p>
+
+    <div class="diagram-wrap">
+      <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor User
+  participant Browser as Browser :3000 (Vite/React)
+  participant Proxy as Express Proxy :3001 (server/index.ts)
+  participant Nominatim as Nominatim (free, no key)
+  participant Whisper as OpenAI Whisper API
+  participant Claude as Anthropic Claude API
+  participant Places as Google Places API (optional)
+  participant EL as ElevenLabs TTS API
+
+  User->>Browser: Tap Start
+  Note over Browser: getUserMedia() — mic permission prompt
+  Note over Browser: VAD loads Silero ONNX model (on-device, no network)
+  Browser->>Nominatim: GET /reverse?lat=…&lon=…
+  Nominatim-->>Browser: { city }
+  Browser->>Proxy: POST /api/speak · { text: greeting }
+  Proxy->>EL: POST /v1/text-to-speech/{voice_id}/stream · 🔑 xi-api-key
+  EL-->>Proxy: audio/mpeg
+  Proxy-->>Browser: audio/mpeg
+  Browser->>User: Greeting plays
+
+  User->>Browser: Speaks naturally
+  Note over Browser: VAD detects speech end (Silero, on-device)
+  Browser->>Proxy: POST /api/transcribe · multipart audio blob
+  Proxy->>Whisper: POST /v1/audio/transcriptions · 🔑 Authorization Bearer
+  Whisper-->>Proxy: { text: transcript }
+  Proxy-->>Browser: { text: transcript }
+
+  Browser->>Proxy: POST /api/chat · { messages: conversation history }
+  Proxy->>Claude: POST /v1/messages · 🔑 x-api-key
+  Claude-->>Proxy: { spoken text + restaurants JSON block }
+  Proxy-->>Browser: parsed response
+
+  Note over Browser: usePlaces — verify each restaurant in parallel (Promise.allSettled)
+  Browser->>Proxy: GET /api/places?query=… (×N, one per restaurant)
+  Proxy->>Places: GET /findplacefromtext · 🔑 key (skipped if absent)
+  Places-->>Proxy: { place_id, formatted_address }
+  Proxy->>Places: GET /place/details?place_id=… · fields: editorial_summary
+  Places-->>Proxy: { editorial_summary.overview }
+  Proxy-->>Browser: enriched: place_id + address + description (or original if no match)
+
+  Browser->>Proxy: POST /api/speak · { text: reply }
+  Proxy->>EL: POST /v1/text-to-speech/{voice_id}/stream · 🔑 xi-api-key
+  EL-->>Proxy: audio/mpeg
+  Proxy-->>Browser: audio/mpeg
+  Browser->>User: Reply plays + restaurant cards shown (links use verified place_id)
+  Note over User,Browser: Loop — user speaks again or taps a card
+      </pre>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="dot dot-gray"></div>
+        Browser → Proxy: same-origin /api/* only — no keys in client
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-blue"></div>
+        Nominatim: browser-direct, free public API, no key needed
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-green"></div>
+        VAD / ONNX: fully on-device after initial .wasm load
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-purple"></div>
+        🔑 API keys live only in the Express proxy (.env, never bundled)
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-orange"></div>
+        transcribe → chat → places (parallel) → speak runs serially per turn
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-gray"></div>
+        Google Places is optional — skipped gracefully if GOOGLE_PLACES_KEY is
+        absent
+      </div>
+    </div>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        sequence: {
+          actorMargin: 60,
+          messageMargin: 30,
+          boxMargin: 10,
+          noteMargin: 10,
+          mirrorActors: false,
+          useMaxWidth: true,
+        },
+        themeVariables: {
+          background: '#1a1a1a',
+          primaryColor: '#1e293b',
+          primaryTextColor: '#e2e8f0',
+          primaryBorderColor: '#334155',
+          lineColor: '#60a5fa',
+          secondaryColor: '#1e293b',
+          tertiaryColor: '#0f172a',
+          edgeLabelBackground: '#1a1a1a',
+          actorBkg: '#1e293b',
+          actorBorder: '#334155',
+          actorTextColor: '#e2e8f0',
+          actorLineColor: '#334155',
+          signalColor: '#94a3b8',
+          signalTextColor: '#cbd5e1',
+          noteBkgColor: '#0f172a',
+          noteTextColor: '#94a3b8',
+          noteBorderColor: '#1e293b',
+          activationBkgColor: '#1e3a5f',
+          activationBorderColor: '#60a5fa',
+          sequenceNumberColor: '#60a5fa',
+          labelBoxBkgColor: '#1e293b',
+          labelBoxBorderColor: '#334155',
+          labelTextColor: '#e2e8f0',
+          loopTextColor: '#94a3b8',
+          fontSize: '14px',
+        },
+      });
+    </script>
+  </body>
+</html>

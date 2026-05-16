@@ -63,6 +63,13 @@
   color: var(--text-muted);
 }
 
+.rc-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
 .rc-why {
   font-size: 14px;
   color: var(--text);
